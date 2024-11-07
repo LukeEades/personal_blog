@@ -1,0 +1,18 @@
+*{
+    margin:0;
+    padding:0;
+}
+
+header{
+    display: flex;
+    justify-content: center;
+}
+
+.articles{
+    list-style: none;
+}
+
+footer{
+    display: flex;
+    justify-content: center;
+}
