@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -21,11 +22,15 @@ type Article struct {
 
 const url string = ":8080"
 
+const admin_uname string = "admin"
+const admin_pass string = "admin"
+
 var templateError error
 var errorTemplate *template.Template
 var articleTemplate *template.Template
 var homeTemplate *template.Template
 var dashTemplate *template.Template
+var newArtTemplate *template.Template
 
 // note: has empty text field
 var fileInfo []Article
@@ -50,13 +55,17 @@ func main() {
 	if templateError != nil {
 		log.Fatal(templateError)
 	}
+	newArtTemplate, templateError = template.ParseFiles(templates + "newArt.template.html")
+	if templateError != nil {
+		log.Fatal(templateError)
+	}
 	fileInfo = loadFileData()
-	// TODO: need to configure a file server/handler to serve static files when needed from the server
 
-	http.HandleFunc("/files/static/{file}", handleFile)
-	http.HandleFunc("/{path}", handleHome)
-	http.HandleFunc("/", handleHome)
-	http.HandleFunc("/article/{name}", handleRegArt)
+	http.HandleFunc("POST /new", handleCreate)
+	http.HandleFunc("GET /new", handleNew)
+	http.Handle("GET /files/", http.StripPrefix("/files", http.FileServer(http.Dir("./files/static"))))
+	http.HandleFunc("GET /{path...}", handleHome)
+	http.HandleFunc("GET /article/{name}", handleRegArt)
 	log.Fatal(http.ListenAndServe(url, nil))
 }
 
@@ -80,9 +89,35 @@ func loadFileData() []Article {
 	return articles
 }
 
-func handleFile(w http.ResponseWriter, r *http.Request) {
-	fileName := r.PathValue("file")
-	http.ServeFile(w, r, filePath+fileName)
+func handleCreate(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	title := r.PostFormValue("title")
+	author := r.PostFormValue("author")
+	text := r.PostFormValue("text")
+	fmt.Println(title, author, text)
+	getRegHome(w)
+}
+
+func handleNew(w http.ResponseWriter, r *http.Request) {
+	uname, pass, ok := r.BasicAuth()
+	if !ok {
+		// send pass request header
+		w.Header().Set("www-Authenticate", "Basic realm=\"User Visible Realm\"")
+		w.WriteHeader(401)
+		return
+	}
+	if uname == admin_uname && pass == admin_pass {
+		// serve file
+		//file := r.PathValue("name")
+		//newArtTemplate.Execute(w, nil)
+		http.ServeFile(w, r, templates+"newArt.template.html")
+		return
+	}
+	// else send 404 response
+	w.WriteHeader(404)
+}
+
+func handleEdit(w http.ResponseWriter, r *http.Request) {
 }
 
 // handles request for homepage
