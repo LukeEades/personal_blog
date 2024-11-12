@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"time"
 )
 
@@ -30,13 +30,12 @@ var errorTemplate *template.Template
 var articleTemplate *template.Template
 var homeTemplate *template.Template
 var dashTemplate *template.Template
-var newArtTemplate *template.Template
+var successTemplate *template.Template
 
 // note: has empty text field
 var fileInfo []Article
 
 var templates string = "./files/templates/"
-var filePath string = "./files/static/"
 
 func main() {
 	errorTemplate, templateError = template.ParseFiles(templates + "error.template.html")
@@ -55,14 +54,18 @@ func main() {
 	if templateError != nil {
 		log.Fatal(templateError)
 	}
-	newArtTemplate, templateError = template.ParseFiles(templates + "newArt.template.html")
+	successTemplate, templateError = template.ParseFiles(templates + "success.template.html")
 	if templateError != nil {
 		log.Fatal(templateError)
 	}
+
 	fileInfo = loadFileData()
 
 	http.HandleFunc("POST /new", handleCreate)
 	http.HandleFunc("GET /new", handleNew)
+	//http.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+	//	http.ServeFile(w, r, "/files/static/icon.png")
+	//})
 	http.Handle("GET /files/", http.StripPrefix("/files", http.FileServer(http.Dir("./files/static"))))
 	http.HandleFunc("GET /{path...}", handleHome)
 	http.HandleFunc("GET /article/{name}", handleRegArt)
@@ -86,6 +89,9 @@ func loadFileData() []Article {
 		art.Text = ""
 		articles = append(articles, art)
 	}
+	slices.SortFunc(articles, func(a, b Article) int {
+		return a.Created.Compare(b.Created)
+	})
 	return articles
 }
 
@@ -94,8 +100,20 @@ func handleCreate(w http.ResponseWriter, r *http.Request) {
 	title := r.PostFormValue("title")
 	author := r.PostFormValue("author")
 	text := r.PostFormValue("text")
-	fmt.Println(title, author, text)
-	getRegHome(w)
+	if title == "" {
+		errorPage(w, errors.New("title is invalid"))
+		return
+	}
+	_, err := os.Stat("./articles/" + title + ".json")
+	if errors.Is(err, os.ErrNotExist) {
+		var art Article = Article{Title: title, Author: author, Text: text, Created: time.Now(), Updated: time.Now()}
+		fileInfo = append(fileInfo, art)
+		saveJson(art)
+	} else {
+		errorPage(w, errors.New("article with same name already exists"))
+		return
+	}
+	successPage(w, "Successfully created article")
 }
 
 func handleNew(w http.ResponseWriter, r *http.Request) {
@@ -108,12 +126,9 @@ func handleNew(w http.ResponseWriter, r *http.Request) {
 	}
 	if uname == admin_uname && pass == admin_pass {
 		// serve file
-		//file := r.PathValue("name")
-		//newArtTemplate.Execute(w, nil)
 		http.ServeFile(w, r, templates+"newArt.template.html")
 		return
 	}
-	// else send 404 response
 	w.WriteHeader(404)
 }
 
@@ -146,12 +161,12 @@ func handleRegArt(w http.ResponseWriter, r *http.Request) {
 }
 
 // saves json value to file
-func saveJson(fileName string, art Article) {
+func saveJson(art Article) {
 	data, err := json.Marshal(art)
 	if err != nil {
 		log.Fatal(err)
 	}
-	os.WriteFile("./articles/"+fileName+".json", data, 0777)
+	os.WriteFile("./articles/"+art.Title+".json", data, 0777)
 }
 
 // sends home template to client
@@ -194,6 +209,13 @@ func getFileHtml(name string, wr http.ResponseWriter) {
 // sends client an error page
 func errorPage(w http.ResponseWriter, err error) {
 	err = errorTemplate.Execute(w, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func successPage(w http.ResponseWriter, data string) {
+	err := successTemplate.Execute(w, data)
 	if err != nil {
 		log.Fatal(err)
 	}
