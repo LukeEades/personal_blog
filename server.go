@@ -66,6 +66,7 @@ func main() {
 	//http.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 	//	http.ServeFile(w, r, "/files/static/icon.png")
 	//})
+	http.HandleFunc("GET /admin", handleAdmin)
 	http.Handle("GET /files/", http.StripPrefix("/files", http.FileServer(http.Dir("./files/static"))))
 	http.HandleFunc("GET /{path...}", handleHome)
 	http.HandleFunc("GET /article/{name}", handleRegArt)
@@ -93,6 +94,13 @@ func loadFileData() []Article {
 		return a.Created.Compare(b.Created)
 	})
 	return articles
+}
+
+func handleAdmin(w http.ResponseWriter, r *http.Request) {
+	err := dashTemplate.Execute(w, fileInfo)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func handleCreate(w http.ResponseWriter, r *http.Request) {

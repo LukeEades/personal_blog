@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/files/home.style.css">
     <title>Dashboard</title>
 </head>
 <body>
-    <header></header> 
+    <header><a id="home" href="/">Home</a><a id="admin" href="#"><h2>Admin Page</h2></a><a id="new" href="/new">New</a></header> 
     <main>
-        <ul>
+        <div id="left-margin"></div>
+        <ul class="articles">
         {{range .}}
-        <li>{{.Name}}</li>
+        <li class="article"><a href="/article/{{.Title}}">{{.Title}}</a><a class="edit" href="/edit/{{.Title}}">edit</a><a href="/delete/{{.Title}}">delete</a></li>
         {{end}}
         </ul>
+        <div id="right-margin"></div>
     </main>
 </body>
 </html>

@@ -11,6 +11,10 @@ header, footer{
     border: black 1px solid
 }
 
+header {
+    align-items: center;
+}
+
 body{
     height: 100vh;
 }
@@ -31,6 +35,20 @@ main{
 
 a{
     text-decoration: none;
+}
+
+.edit, #new, #admin-link{
+    margin-left: auto;
+}
+
+#home {
+    margin: 1rem;
+    margin-right: auto;
+}
+
+#blog-home {
+    margin: 1rem;
+    margin-left: auto;
 }
 
 .articles{

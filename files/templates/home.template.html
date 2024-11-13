@@ -7,12 +7,12 @@
     <title>Home</title>
 </head>
 <body>
-    <header>Blog</header>
+    <header><a id="blog-home" href="#"><h2>Blog</h2></a><a id="admin-link" href="/admin">Admin</a></header>
     <main>
         <div id="left-margin"></div>
         <ul class="articles">
         {{range .}}
-        <li class="article"><a href='http://localhost:8080/article/{{.Title}}' >{{.Title}}</a><div class="date">Published {{.Created.Day}} {{.Created.Month}} {{.Created.Year}}</div></li>
+        <li class="article"><a href="/article/{{.Title}}" >{{.Title}}</a><div class="date">Published {{.Created.Day}} {{.Created.Month}} {{.Created.Year}}</div></li>
         {{end}}
         </ul>
         <div id="right-margin"></div>
