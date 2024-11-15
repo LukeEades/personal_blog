@@ -41,13 +41,15 @@ a{
     margin-left: auto;
 }
 
+.edit{
+    margin-right: 1rem;
+}
+
 #home {
-    margin: 1rem;
     margin-right: auto;
 }
 
 #blog-home {
-    margin: 1rem;
     margin-left: auto;
 }
 

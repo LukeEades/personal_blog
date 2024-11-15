@@ -31,6 +31,7 @@ var articleTemplate *template.Template
 var homeTemplate *template.Template
 var dashTemplate *template.Template
 var successTemplate *template.Template
+var formTemplate *template.Template
 
 // note: has empty text field
 var fileInfo []Article
@@ -58,14 +59,17 @@ func main() {
 	if templateError != nil {
 		log.Fatal(templateError)
 	}
+	formTemplate, templateError = template.ParseFiles(templates + "form.template.html")
+	if templateError != nil {
+		log.Fatal(templateError)
+	}
 
 	fileInfo = loadFileData()
 
 	http.HandleFunc("POST /new", handleCreate)
 	http.HandleFunc("GET /new", handleNew)
-	//http.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
-	//	http.ServeFile(w, r, "/files/static/icon.png")
-	//})
+	http.HandleFunc("GET /edit", handleEdit)
+	http.HandleFunc("POST /edit", handleEditFile)
 	http.HandleFunc("GET /admin", handleAdmin)
 	http.Handle("GET /files/", http.StripPrefix("/files", http.FileServer(http.Dir("./files/static"))))
 	http.HandleFunc("GET /{path...}", handleHome)
@@ -134,13 +138,31 @@ func handleNew(w http.ResponseWriter, r *http.Request) {
 	}
 	if uname == admin_uname && pass == admin_pass {
 		// serve file
-		http.ServeFile(w, r, templates+"newArt.template.html")
+		formTemplate.Execute(w, "new")
 		return
 	}
 	w.WriteHeader(404)
 }
 
+// TODO: add basic auth here as well
 func handleEdit(w http.ResponseWriter, r *http.Request) {
+	// check if there is a file with the selected name
+	fileName := r.URL.Query().Get("file")
+	// fetch file and fill in information into template form page
+	_, err := getArticle(fileName)
+	// if it doesn't exist then return error page
+	// could also serve with a front-end script to fill in values
+	if err != nil {
+		errorPage(w, err)
+		return
+	}
+
+	formTemplate.Execute(w, "edit")
+	// serve page
+}
+
+func handleEditFile(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("helo ther"))
 }
 
 // handles request for homepage
