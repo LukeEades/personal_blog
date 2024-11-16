@@ -138,7 +138,14 @@ func handleNew(w http.ResponseWriter, r *http.Request) {
 	}
 	if uname == admin_uname && pass == admin_pass {
 		// serve file
-		formTemplate.Execute(w, "new")
+		vals := struct {
+			Function string
+			Art      Article
+		}{
+			Function: "new",
+			Art:      Article{},
+		}
+		formTemplate.Execute(w, vals)
 		return
 	}
 	w.WriteHeader(404)
@@ -149,20 +156,38 @@ func handleEdit(w http.ResponseWriter, r *http.Request) {
 	// check if there is a file with the selected name
 	fileName := r.URL.Query().Get("file")
 	// fetch file and fill in information into template form page
-	_, err := getArticle(fileName)
+	art, err := getArticle(fileName)
 	// if it doesn't exist then return error page
 	// could also serve with a front-end script to fill in values
 	if err != nil {
 		errorPage(w, err)
 		return
 	}
-
-	formTemplate.Execute(w, "edit")
-	// serve page
+	vals := struct {
+		Function string
+		Art      Article
+	}{
+		Function: "edit",
+		Art:      art,
+	}
+	formTemplate.Execute(w, vals)
 }
 
 func handleEditFile(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("helo ther"))
+	// check if the file exists
+	// if it doesn't exist then return an error page
+	// else return success page and change file
+	art, err := getArticle(r.FormValue("original_title"))
+	if err != nil {
+		// serve error page
+		errorPage(w, err)
+		return
+	}
+	newArt := Article{Title: r.FormValue("title"), Author: r.FormValue("author"), Text: r.FormValue("text"), Updated: time.Now(), Created: art.Created}
+	saveJson(newArt, art.Title)
+	// should check for errors here
+	os.Rename("articles/"+art.Title+".json", "articles/"+newArt.Title+".json")
+	fileInfo = loadFileData()
 }
 
 // handles request for homepage
@@ -191,12 +216,17 @@ func handleRegArt(w http.ResponseWriter, r *http.Request) {
 }
 
 // saves json value to file
-func saveJson(art Article) {
+// TODO: remove fatal logs
+func saveJson(art Article, nameParam ...string) {
+	name := art.Title
+	if len(nameParam) > 0 {
+		name = nameParam[0]
+	}
 	data, err := json.Marshal(art)
 	if err != nil {
 		log.Fatal(err)
 	}
-	os.WriteFile("./articles/"+art.Title+".json", data, 0777)
+	os.WriteFile("./articles/"+name+".json", data, 0777)
 }
 
 // sends home template to client

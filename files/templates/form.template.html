@@ -6,13 +6,14 @@
     <title>New Article</title>
 </head>
 <body>
-    <form action="/{{.}}" method="POST">
+    <form action="/{{.Function}}" method="POST">
+        <input type="hidden" name="original_title" value="{{.Art.Title}}">
         <label for="title">Title</label>
-        <input id="title" name="title" type="text">
+        <input id="title" name="title" type="text" value="{{.Art.Title}}">
         <label for="author">Author</label>
-        <input id="author" name="author" type="text">
+        <input id="author" name="author" type="text" value="{{.Art.Author}}">
         <label for="text">Text</label>
-        <input id="text" name="text" type="text">
+        <input id="text" name="text" type="text" value="{{.Art.Text}}">
         <input type="submit" value="Submit">
     </form>
 </body>
