@@ -66,6 +66,7 @@ func main() {
 
 	fileInfo = loadFileData()
 
+	http.HandleFunc("GET /remove/{name}", handleDelete)
 	http.HandleFunc("POST /new", handleCreate)
 	http.HandleFunc("GET /new", handleNew)
 	http.HandleFunc("GET /edit", handleEdit)
@@ -149,6 +150,21 @@ func handleNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(404)
+}
+
+func handleDelete(w http.ResponseWriter, r *http.Request) {
+	// should use basic auth here
+	// should also cleanse this value first
+	file := r.PathValue("name")
+	// delete specified file if it exists
+	err := os.Remove("./articles/" + file + ".json")
+	if err != nil {
+		errorPage(w, err)
+		return
+	}
+	successPage(w, "Successfully deleted article")
+	// refresh slice of fileinfo
+	fileInfo = loadFileData()
 }
 
 // TODO: add basic auth here as well
